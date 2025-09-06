@@ -4,9 +4,12 @@ import requests
 import time
 import threading
 
-# Roblox services
+# =========================
+# Roblox services to monitor
+# =========================
 roblox_services = {
     "Website": "https://www.roblox.com",
+    "Profiles": "https://www.roblox.com/users/",
     "API": "https://api.roblox.com",
     "Auth": "https://auth.roblox.com",
     "Catalog": "https://catalog.roblox.com",
@@ -25,21 +28,34 @@ roblox_services = {
     "Badges": "https://badges.roblox.com",
     "Points": "https://points.roblox.com",
     "TextFilter": "https://textfilter.roblox.com",
-    "Messaging": "https://messaging.roblox.com"
+    "Messaging": "https://messaging.roblox.com",
+    "GameModeration": "https://gamemoderation.roblox.com",
+    "GroupsModeration": "https://groupsmoderation.roblox.com",
+    "FriendsModeration": "https://friendsmoderation.roblox.com",
+    "Games": "https://games.roblox.com"
 }
 
-# Store averages
+# Store response times
 response_times = {service: [] for service in roblox_services}
 
+# GUI update lock
+lock = threading.Lock()
+
+# =========================
 # Function to check services
+# =========================
 def check_services():
     log_lines = []
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    log_lines.append(f"=== Roblox Status Check: {timestamp} ===")
+    
     for service, url in roblox_services.items():
         try:
             response = requests.get(url, timeout=5)
-            ms = int(response.elapsed.total_seconds()*1000)
+            ms = int(response.elapsed.total_seconds() * 1000)
             response_times[service].append(ms)
-            avg = int(sum(response_times[service])/len(response_times[service]))
+            avg = int(sum(response_times[service]) / len(response_times[service]))
+            
             if response.status_code == 200:
                 status = "UP"
                 color = "green" if ms < 500 else "yellow"
@@ -47,30 +63,35 @@ def check_services():
                 status = f"ERROR {response.status_code}"
                 color = "red"
             display_text = f"{service}: {status} | {ms}ms | avg {avg}ms"
+            
         except requests.exceptions.RequestException as e:
             status = "DOWN"
             color = "red"
             display_text = f"{service}: {status} | {e}"
-        # Update GUI
-        service_labels[service].config(text=display_text, fg=color)
-        # Log short reason if down
-        if color == "red":
-            log_lines.append(f"{service}: {status} | {e if 'e' in locals() else 'HTTP error'}")
+        
+        # Update GUI safely
+        with lock:
+            service_labels[service].config(text=display_text, fg=color)
+        
+        # Log only if issues
+        if color == "red" or color == "yellow":
+            log_lines.append(display_text)
+    
     # Write log file
     with open("roblox_status_log.txt", "w") as f:
-        if log_lines:
-            f.write("\n".join(log_lines))
-        else:
-            f.write("All services UP\n")
+        f.write("\n".join(log_lines))
+    
     # Schedule next check
-    root.after(10000, lambda: threading.Thread(target=check_services).start())  # refresh every 10s
+    root.after(10000, lambda: threading.Thread(target=check_services).start())
 
-# Create Tkinter window
+# =========================
+# Setup GUI
+# =========================
 root = tk.Tk()
-root.title("Roblox Status Monitor")
-root.geometry("700x700")
+root.title("🌟 Roblox Professional Status Monitor 🌟")
+root.geometry("800x700")
 
-tk.Label(root, text="🔹 Roblox Services Status 🔹", font=("Arial", 18)).pack(pady=10)
+tk.Label(root, text="Roblox Services Status Monitor", font=("Arial", 18, "bold")).pack(pady=10)
 
 # Scrollable frame for services
 frame = tk.Frame(root)
@@ -93,11 +114,11 @@ scrollbar.pack(side="right", fill="y")
 # Labels for each service
 service_labels = {}
 for service in roblox_services:
-    lbl = tk.Label(scrollable_frame, text=f"{service}: Checking...", font=("Arial", 12))
-    lbl.pack(anchor="w", pady=2)
+    lbl = tk.Label(scrollable_frame, text=f"{service}: Checking...", font=("Arial", 12), anchor="w")
+    lbl.pack(fill="x", pady=2, padx=5)
     service_labels[service] = lbl
 
-# Start the monitoring in a separate thread
+# Start monitoring in a separate thread
 threading.Thread(target=check_services).start()
 
 root.mainloop()
