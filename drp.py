@@ -8,6 +8,7 @@ import threading
 # Roblox services to monitor
 # =========================
 roblox_services = {
+    # Core services
     "Website": "https://www.roblox.com",
     "Profiles": "https://www.roblox.com/users/",
     "API": "https://api.roblox.com",
@@ -19,8 +20,9 @@ roblox_services = {
     "Economy": "https://economy.roblox.com",
     "Groups": "https://groups.roblox.com",
     "Notifications": "https://notifications.roblox.com",
+    # Developer tools
     "Develop": "https://develop.roblox.com",
-    "Forum": "https://forum.roblox.com",
+    "Forum": "https://devforum.roblox.com",
     "Trading": "https://trades.roblox.com",
     "Presence": "https://presence.roblox.com",
     "Thumbnails": "https://thumbnails.roblox.com",
@@ -32,7 +34,8 @@ roblox_services = {
     "GameModeration": "https://gamemoderation.roblox.com",
     "GroupsModeration": "https://groupsmoderation.roblox.com",
     "FriendsModeration": "https://friendsmoderation.roblox.com",
-    "Games": "https://games.roblox.com"
+    "Games": "https://games.roblox.com",
+    "Chat": "https://chat.roblox.com",
 }
 
 # Store response times
@@ -73,8 +76,8 @@ def check_services():
         with lock:
             service_labels[service].config(text=display_text, fg=color)
         
-        # Log only if issues
-        if color == "red" or color == "yellow":
+        # Log issues
+        if color in ["yellow", "red"]:
             log_lines.append(display_text)
     
     # Write log file
